@@ -30,6 +30,14 @@
   .header .sub{font-size:13px;color:var(--ink-soft);font-family:var(--mono);}
 
   .tabs{display:flex;gap:4px;margin-bottom:22px;border-bottom:1px solid var(--line);}
+
+  .view-toggle{display:inline-flex;background:var(--line-soft);border-radius:8px;padding:3px;margin-bottom:16px;gap:2px;}
+  .vt-btn{font-family:var(--body);font-weight:600;font-size:12.5px;padding:7px 16px;border-radius:6px;cursor:pointer;color:var(--ink-soft);transition:all .15s;user-select:none;}
+  .vt-btn:hover{color:var(--navy-deep);}
+  .vt-btn.active{background:var(--navy-deep);color:#fff;}
+  .nav-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .nav-row select{width:auto;padding:7px 10px;}
+  .nav-label{font-family:var(--display);font-weight:600;font-size:13.5px;color:var(--navy-deep);flex:1;min-width:180px;}
   .tab{font-family:var(--display);font-weight:600;font-size:13.5px;letter-spacing:.02em;text-transform:uppercase;padding:10px 16px;cursor:pointer;color:var(--ink-soft);border-bottom:2px solid transparent;transition:all .15s;user-select:none;}
   .tab:hover{color:var(--navy);}
   .tab.active{color:var(--navy-deep);border-bottom-color:var(--navy-deep);}
@@ -123,6 +131,12 @@ async function saveKey(key, value){
 
 let CONFIG, TECHS, TIME_ENTRIES, JOB_ENTRIES;
 let activeTab = 'dashboard';
+let dashView = 'weekly'; // 'weekly' | 'monthly' | 'ytd'
+let weekOffset = 0;
+const _todayForInit = new Date();
+let viewYear = _todayForInit.getFullYear();
+let viewMonth = _todayForInit.getMonth()+1; // 1-12
+let ytdYear = _todayForInit.getFullYear();
 
 const DEFAULT_CONFIG = {
   weekStart: '2026-06-22',
@@ -237,8 +251,30 @@ function weekRanges(){
   const mStart = `${today.getFullYear()}-${pad(today.getMonth()+1)}-01`; // this calendar month
   const mEnd = toStr(today);
 
-  return {w1s,w1e,w2s,w2e,mStart,mEnd};
+  return {w1s,w1e,w2s,w2e,mStart,mEnd, thisMondayStr: w2s};
 }
+
+/* week N offsets from the current week's Monday. offset 0 = this week, -1 = last week, +1 = next week */
+function weekByOffset(offset){
+  const {thisMondayStr} = weekRanges();
+  const start = addDays(thisMondayStr, offset*7);
+  const end = addDays(start, 6);
+  return {start, end};
+}
+function monthBounds(year, month /*1-12*/){
+  const pad = n => String(n).padStart(2,'0');
+  const start = `${year}-${pad(month)}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const end = `${year}-${pad(month)}-${pad(lastDay)}`;
+  return {start, end};
+}
+function yearBounds(year){
+  const today = new Date();
+  const start = `${year}-01-01`;
+  const end = year === today.getFullYear() ? weekRanges().mEnd : `${year}-12-31`;
+  return {start, end};
+}
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 /* ---------------- money/number formatting ---------------- */
 const fmtMoney = n => '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -280,9 +316,28 @@ function renderTab(){
   if(activeTab==='jobs') c.innerHTML = renderJobs();
   if(activeTab==='settings') c.innerHTML = renderSettings();
   attachTabEvents();
+  if(activeTab==='dashboard') attachDashboardEvents();
   if(activeTab==='timelog') attachTimeLogEvents();
   if(activeTab==='jobs') attachJobEvents();
   if(activeTab==='settings') attachSettingsEvents();
+}
+
+function attachDashboardEvents(){
+  document.querySelectorAll('.vt-btn').forEach(el=>{
+    el.onclick = ()=>{ dashView = el.dataset.view; renderTab(); };
+  });
+  const wkPrev = document.getElementById('wk-prev');
+  const wkNext = document.getElementById('wk-next');
+  const wkToday = document.getElementById('wk-today');
+  if(wkPrev) wkPrev.onclick = ()=>{ weekOffset -= 1; renderTab(); };
+  if(wkNext) wkNext.onclick = ()=>{ weekOffset += 1; renderTab(); };
+  if(wkToday) wkToday.onclick = ()=>{ weekOffset = 0; renderTab(); };
+  const mMonth = document.getElementById('m-month');
+  const mYear = document.getElementById('m-year');
+  if(mMonth) mMonth.onchange = ()=>{ viewMonth = Number(mMonth.value); renderTab(); };
+  if(mYear) mYear.onchange = ()=>{ viewYear = Number(mYear.value); renderTab(); };
+  const yYear = document.getElementById('y-year');
+  if(yYear) yYear.onchange = ()=>{ ytdYear = Number(yYear.value); renderTab(); };
 }
 
 /* ---------------- gauge ---------------- */
@@ -354,8 +409,68 @@ function tierPill(tier){
   return `<span class="pill ${cls}">${tier}</span>`;
 }
 
+function viewToggle(){
+  return `
+    <div class="view-toggle">
+      <div class="vt-btn ${dashView==='weekly'?'active':''}" data-view="weekly">Weekly</div>
+      <div class="vt-btn ${dashView==='monthly'?'active':''}" data-view="monthly">Monthly</div>
+      <div class="vt-btn ${dashView==='ytd'?'active':''}" data-view="ytd">Year-to-Date</div>
+    </div>
+  `;
+}
+
+function renderWeeklyView(){
+  const {start, end} = weekByOffset(weekOffset);
+  const label = weekOffset===0 ? 'This Week' : weekOffset===-1 ? 'Last Week' : weekOffset===1 ? 'Next Week' :
+                (weekOffset<0 ? `${Math.abs(weekOffset)} Weeks Ago` : `${weekOffset} Weeks Ahead`);
+  return `
+    <div class="nav-row">
+      <button class="btn-secondary" id="wk-prev">‹ Prev Week</button>
+      <div class="nav-label">${label}: ${fmtDateShort(start)} – ${fmtDateFull(end)}</div>
+      <button class="btn-secondary" id="wk-next">Next Week ›</button>
+      ${weekOffset!==0 ? '<button class="btn-secondary" id="wk-today">Back to This Week</button>' : ''}
+    </div>
+    ${weekTable('Weekly Performance Summary', `${fmtDateShort(start)} – ${fmtDateFull(end)} · updates automatically as you log entries`, start, end)}
+  `;
+}
+
+function renderMonthlyView(){
+  const {start, end} = monthBounds(viewYear, viewMonth);
+  const monthOptions = MONTH_NAMES.map((m,i)=>`<option value="${i+1}" ${viewMonth===i+1?'selected':''}>${m}</option>`).join('');
+  const yearOptions = yearOptionsList().map(y=>`<option value="${y}" ${viewYear===y?'selected':''}>${y}</option>`).join('');
+  return `
+    <div class="nav-row">
+      <label style="margin:0;">Month</label>
+      <select id="m-month">${monthOptions}</select>
+      <label style="margin:0;">Year</label>
+      <select id="m-year">${yearOptions}</select>
+    </div>
+    ${weekTable('Monthly Performance Summary', `${MONTH_NAMES[viewMonth-1]} ${viewYear} · ${fmtDateShort(start)} – ${fmtDateFull(end)}`, start, end)}
+  `;
+}
+
+function renderYtdView(){
+  const {start, end} = yearBounds(ytdYear);
+  const yearOptions = yearOptionsList().map(y=>`<option value="${y}" ${ytdYear===y?'selected':''}>${y}</option>`).join('');
+  return `
+    <div class="nav-row">
+      <label style="margin:0;">Year</label>
+      <select id="y-year">${yearOptions}</select>
+    </div>
+    ${weekTable('Year-to-Date Performance Summary', `Jan 1 – ${fmtDateFull(end)}, ${ytdYear}`, start, end)}
+  `;
+}
+
+function yearOptionsList(){
+  const thisYear = new Date().getFullYear();
+  const years = new Set([thisYear, thisYear-1, thisYear+0]);
+  TIME_ENTRIES.forEach(e=>years.add(Number(e.date.slice(0,4))));
+  JOB_ENTRIES.forEach(j=>years.add(Number(j.date.slice(0,4))));
+  return [...years].sort((a,b)=>a-b);
+}
+
 function renderDashboard(){
-  const {w1s,w1e,w2s,w2e,mStart,mEnd} = weekRanges();
+  const {mStart,mEnd} = weekRanges();
 
   const monthRows = TECHS.map(t=>({name:t.name, ...techStatsForRange(t.id, mStart, mEnd)}));
   const monthTotals = monthRows.reduce((acc,r)=>({
@@ -363,15 +478,19 @@ function renderDashboard(){
   }),{revenue:0,payroll:0,netBonus:0});
   const monthLabor = monthTotals.revenue>0 ? monthTotals.payroll/monthTotals.revenue : 0;
 
+  let viewHtml = '';
+  if(dashView==='weekly') viewHtml = renderWeeklyView();
+  if(dashView==='monthly') viewHtml = renderMonthlyView();
+  if(dashView==='ytd') viewHtml = renderYtdView();
+
   return `
     <div class="grid-3" style="margin-bottom:18px;">
       <div class="kpi"><div class="kpi-label">Month-to-Date Revenue</div><div class="kpi-val">${fmtMoney(monthTotals.revenue)}</div></div>
       <div class="kpi"><div class="kpi-label">Month-to-Date Payroll</div><div class="kpi-val">${fmtMoney(monthTotals.payroll)}</div></div>
       <div class="kpi"><div class="kpi-label">Company Labor Cost %</div><div class="kpi-val">${fmtPct(monthLabor)}</div></div>
     </div>
-    ${weekTable('Last Week Performance Summary', `${fmtDateShort(w1s)} – ${fmtDateFull(w1e)}`, w1s, w1e)}
-    ${weekTable('This Week Performance Summary', `${fmtDateShort(w2s)} – ${fmtDateFull(w2e)} · updates automatically as you log entries`, w2s, w2e)}
-    ${weekTable('Month-to-Date Actual Performance', `${fmtDateShort(mStart)} – ${fmtDateFull(mEnd)} · live running total, no projection`, mStart, mEnd)}
+    ${viewToggle()}
+    ${viewHtml}
     ${weekTable('Overall Summary (All-Time)', `Every entry ever logged, any date · always up to date`, '0000-01-01', '9999-12-31')}
     <div class="card">
       <h2>Bonus Tiers (reference)</h2>
