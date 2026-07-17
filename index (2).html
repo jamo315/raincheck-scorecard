@@ -1,0 +1,643 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#F5F2EA;
+    --surface:#FFFFFF;
+    --ink:#22282B;
+    --ink-soft:#5B6469;
+    --navy:#1B3A5C;
+    --navy-deep:#122943;
+    --green:#3F7A52;
+    --green-bg:#E6EFE8;
+    --amber:#B9791E;
+    --amber-bg:#F5EBD8;
+    --rust:#A6432E;
+    --rust-bg:#F3E2DC;
+    --line:#E0DACB;
+    --line-soft:#EDE8DB;
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);}
+  #app{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+
+  .header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:22px;border-bottom:2px solid var(--navy);padding-bottom:16px;}
+  .header h1{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:-0.01em;margin:0;color:var(--navy-deep);}
+  .header .sub{font-size:13px;color:var(--ink-soft);font-family:var(--mono);}
+
+  .tabs{display:flex;gap:4px;margin-bottom:22px;border-bottom:1px solid var(--line);}
+  .tab{font-family:var(--display);font-weight:600;font-size:13.5px;letter-spacing:.02em;text-transform:uppercase;padding:10px 16px;cursor:pointer;color:var(--ink-soft);border-bottom:2px solid transparent;transition:all .15s;user-select:none;}
+  .tab:hover{color:var(--navy);}
+  .tab.active{color:var(--navy-deep);border-bottom-color:var(--navy-deep);}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:18px;}
+  .card h2{font-family:var(--display);font-size:16px;font-weight:600;margin:0 0 4px;color:var(--navy-deep);}
+  .card .card-note{font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-family:var(--display);font-weight:600;font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  td{padding:9px 10px;border-bottom:1px solid var(--line-soft);font-family:var(--mono);white-space:nowrap;}
+  td.name{font-family:var(--body);font-weight:500;}
+  tr.total td{font-family:var(--body);font-weight:700;border-top:2px solid var(--navy);border-bottom:none;background:var(--line-soft);}
+  tr.total td.name{font-family:var(--display);}
+
+  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-family:var(--body);font-weight:600;font-size:11.5px;}
+  .pill.t3{background:var(--green-bg);color:var(--green);}
+  .pill.t2{background:var(--amber-bg);color:var(--amber);}
+  .pill.t1{background:var(--rust-bg);color:var(--rust);}
+
+  .gauge-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .gauge-label{width:130px;font-family:var(--body);font-weight:500;font-size:13px;flex-shrink:0;}
+  .gauge-track{flex:1;height:10px;border-radius:6px;background:linear-gradient(to right, var(--green) 0%, var(--green) 23%, var(--amber) 23%, var(--amber) 30%, var(--rust) 30%, var(--rust) 100%);position:relative;opacity:.9;}
+  .gauge-marker{position:absolute;top:-4px;width:3px;height:18px;background:var(--navy-deep);border-radius:2px;}
+  .gauge-marker::after{content:'';position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--navy-deep);}
+  .gauge-val{width:56px;text-align:right;font-family:var(--mono);font-size:12.5px;font-weight:600;flex-shrink:0;}
+
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px;align-items:end;}
+  label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);margin-bottom:5px;}
+  input, select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-family:var(--body);font-size:13.5px;background:#fff;color:var(--ink);}
+  input:focus, select:focus{outline:none;border-color:var(--navy);}
+
+  button{font-family:var(--body);font-weight:600;font-size:13px;padding:9px 16px;border-radius:6px;border:none;cursor:pointer;transition:opacity .15s;}
+  button:hover{opacity:.85;}
+  .btn-primary{background:var(--navy-deep);color:#fff;}
+  .btn-secondary{background:var(--line-soft);color:var(--ink);}
+  .btn-danger{background:transparent;color:var(--rust);padding:4px 8px;font-size:12px;}
+  .btn-add-row{background:transparent;color:var(--navy);border:1px dashed var(--navy);padding:6px 12px;font-size:12px;}
+
+  .participants{margin:10px 0;}
+  .participant-row{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;margin-bottom:6px;align-items:center;}
+
+  .empty{color:var(--ink-soft);font-style:italic;font-size:13px;padding:14px 0;}
+  .section-title{font-family:var(--display);font-weight:700;font-size:14px;color:var(--navy-deep);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.03em;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  @media(max-width:700px){.grid-3{grid-template-columns:1fr;}}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;}
+  .kpi .kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);font-weight:600;margin-bottom:6px;}
+  .kpi .kpi-val{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--navy-deep);}
+  .save-bar{display:flex;justify-content:flex-end;gap:10px;margin-top:10px;}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--navy-deep);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-family:var(--body);opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;z-index:50;}
+  .toast.show{opacity:1;transform:translateY(0);}
+  .loading{padding:40px;text-align:center;color:var(--ink-soft);font-family:var(--mono);font-size:13px;}
+  .del-icon{cursor:pointer;color:var(--rust);font-size:15px;line-height:1;}
+  .shared-note{font-size:11.5px;color:var(--ink-soft);background:var(--line-soft);padding:8px 12px;border-radius:6px;margin-bottom:16px;}
+</style>
+
+<div id="app"><div class="loading">Loading scorecard…</div></div>
+<div id="toast" class="toast"></div>
+
+<script>
+(function(){
+
+/* ---------------- storage helpers ----------------
+   window.storage only exists inside Claude.ai artifact previews.
+   When this app is deployed on its own (Netlify, etc.), we fall back
+   to localStorage so entries actually persist in that browser. */
+const STORAGE_PREFIX = 'p4p_scorecard_';
+const hasClaudeStorage = (typeof window !== 'undefined' && !!window.storage);
+
+async function loadKey(key, fallback){
+  try{
+    if(hasClaudeStorage){
+      const r = await window.storage.get(key, true);
+      return r ? JSON.parse(r.value) : fallback;
+    } else {
+      const raw = localStorage.getItem(STORAGE_PREFIX+key);
+      return raw ? JSON.parse(raw) : fallback;
+    }
+  }catch(e){ return fallback; }
+}
+async function saveKey(key, value){
+  try{
+    if(hasClaudeStorage){
+      await window.storage.set(key, JSON.stringify(value), true);
+    } else {
+      localStorage.setItem(STORAGE_PREFIX+key, JSON.stringify(value));
+    }
+  }catch(e){ showToast('Save failed - your browser may be blocking local storage'); }
+}
+
+let CONFIG, TECHS, TIME_ENTRIES, JOB_ENTRIES;
+let activeTab = 'dashboard';
+
+const DEFAULT_CONFIG = {
+  weekStart: '2026-06-22',
+  tier3Max: 0.23,
+  tier2Max: 0.30,
+  tier3Rate: 20,
+  tier2Rate: 5,
+  otThreshold: 8,
+  otPenalty: 0.5
+};
+const DEFAULT_TECHS = [
+  {id:'t1', name:'Donny Gardner', rate:25},
+  {id:'t2', name:'Sam Miller', rate:22},
+  {id:'t3', name:'Nick Solomon', rate:32}
+];
+/* Seeded from the existing June 22 - June 30 data in the original Excel tracker.
+   These only load once, the first time the app runs (i.e. when storage is empty) - 
+   after that, whatever is saved in storage takes over. */
+const DEFAULT_TIME_ENTRIES = [{"id": "n99vffdv", "techId": "t1", "date": "2026-06-22", "clockIn": "08:02", "clockOut": "18:03"}, {"id": "igbautyl", "techId": "t1", "date": "2026-06-23", "clockIn": "08:08", "clockOut": "18:31"}, {"id": "lvbnh8tw", "techId": "t1", "date": "2026-06-24", "clockIn": "07:21", "clockOut": "18:04"}, {"id": "aaswmw40", "techId": "t1", "date": "2026-06-25", "clockIn": "08:09", "clockOut": "16:10"}, {"id": "kvwomn2s", "techId": "t1", "date": "2026-06-26", "clockIn": "08:03", "clockOut": "20:09"}, {"id": "odmz6lhb", "techId": "t3", "date": "2026-06-22", "clockIn": "07:22", "clockOut": "18:49"}, {"id": "f2v5ipwv", "techId": "t3", "date": "2026-06-23", "clockIn": "07:50", "clockOut": "18:29"}, {"id": "ww4vvs0m", "techId": "t3", "date": "2026-06-24", "clockIn": "07:39", "clockOut": "16:40"}, {"id": "hmogqb23", "techId": "t1", "date": "2026-06-27", "clockIn": "08:01", "clockOut": "14:54"}, {"id": "w3ftusmz", "techId": "t1", "date": "2026-06-29", "clockIn": "08:11", "clockOut": "16:33"}, {"id": "87uhbchg", "techId": "t1", "date": "2026-06-30", "clockIn": "08:00", "clockOut": "17:46"}, {"id": "vmy58jqx", "techId": "t3", "date": "2026-06-29", "clockIn": "08:48", "clockOut": "17:19"}, {"id": "tcwf9y6o", "techId": "t3", "date": "2026-06-30", "clockIn": "08:23", "clockOut": "17:54"}, {"id": "qnmk34xi", "techId": "t1", "date": "2026-07-01", "clockIn": "06:59", "clockOut": "17:33"}, {"id": "cp9cmwx2", "techId": "t3", "date": "2026-07-01", "clockIn": "07:47", "clockOut": "18:38"}, {"id": "aul2b2c0", "techId": "t3", "date": "2026-07-02", "clockIn": "07:28", "clockOut": "16:11"}, {"id": "0uh1zno6", "techId": "t1", "date": "2026-07-02", "clockIn": "08:28", "clockOut": "12:44"}, {"id": "hlfs95d7", "techId": "t1", "date": "2026-07-03", "clockIn": "08:07", "clockOut": "18:33"}, {"id": "nw2wglc5", "techId": "t3", "date": "2026-07-03", "clockIn": "07:28", "clockOut": "16:11"}, {"id": "6m2qv3vd", "techId": "t3", "date": "2026-07-06", "clockIn": "08:10", "clockOut": "18:10"}, {"id": "te8cxh2z", "techId": "t1", "date": "2026-07-06", "clockIn": "08:11", "clockOut": "18:22"}, {"id": "6o85txce", "techId": "t2", "date": "2026-07-06", "clockIn": "08:16", "clockOut": "15:17"}, {"id": "t0ikf94z", "techId": "t1", "date": "2026-07-07", "clockIn": "08:01", "clockOut": "18:50"}, {"id": "191mwvp4", "techId": "t3", "date": "2026-07-07", "clockIn": "07:51", "clockOut": "19:35"}, {"id": "uxldttrr", "techId": "t3", "date": "2026-07-08", "clockIn": "08:00", "clockOut": "16:13"}, {"id": "dqd8sj5r", "techId": "t1", "date": "2026-07-08", "clockIn": "08:02", "clockOut": "17:00"}, {"id": "tuh6l966", "techId": "t2", "date": "2026-07-08", "clockIn": "08:38", "clockOut": "12:41"}, {"id": "ci1ydcxe", "techId": "t1", "date": "2026-07-09", "clockIn": "08:08", "clockOut": "17:32"}, {"id": "ix1j0ykg", "techId": "t3", "date": "2026-07-09", "clockIn": "08:00", "clockOut": "16:15"}, {"id": "xg4cnzy2", "techId": "t2", "date": "2026-07-10", "clockIn": "08:47", "clockOut": "19:29"}, {"id": "0o9mhjbd", "techId": "t1", "date": "2026-07-10", "clockIn": "09:37", "clockOut": "17:34"}, {"id": "6nzmj0ea", "techId": "t1", "date": "2026-07-13", "clockIn": "11:28", "clockOut": "18:04"}, {"id": "c2hg7nju", "techId": "t3", "date": "2026-07-13", "clockIn": "08:23", "clockOut": "15:27"}, {"id": "uyc8977b", "techId": "t2", "date": "2026-07-13", "clockIn": "07:55", "clockOut": "17:36"}, {"id": "4irghh09", "techId": "t1", "date": "2026-07-14", "clockIn": "07:51", "clockOut": "18:01"}, {"id": "19uqavy1", "techId": "t3", "date": "2026-07-14", "clockIn": "08:04", "clockOut": "17:40"}, {"id": "i15sx6eb", "techId": "t2", "date": "2026-07-14", "clockIn": "08:02", "clockOut": "18:11"}, {"id": "tqfk7cxh", "techId": "t1", "date": "2026-07-15", "clockIn": "08:05", "clockOut": "18:48"}, {"id": "5zl42g2h", "techId": "t3", "date": "2026-07-15", "clockIn": "08:57", "clockOut": "17:33"}, {"id": "r6nxx5dz", "techId": "t2", "date": "2026-07-15", "clockIn": "08:21", "clockOut": "16:54"}, {"id": "koz1t2g3", "techId": "t1", "date": "2026-07-16", "clockIn": "07:36", "clockOut": "17:58"}, {"id": "lc7ece05", "techId": "t3", "date": "2026-07-16", "clockIn": "08:02", "clockOut": "16:13"}, {"id": "r4v1vd5a", "techId": "t2", "date": "2026-07-16", "clockIn": "08:51", "clockOut": "18:06"}];
+const DEFAULT_JOB_ENTRIES = [{"id": "3951uyop", "date": "2026-06-22", "jobId": "JOB-7161", "revenue": 129.5, "participants": [{"techId": "t1", "hours": 0.48}]}, {"id": "q0thj433", "date": "2026-06-22", "jobId": "JOB-7187", "revenue": 500.6, "participants": [{"techId": "t1", "hours": 1.58}]}, {"id": "0r3gqovy", "date": "2026-06-22", "jobId": "JOB-7073", "revenue": 731.82, "participants": [{"techId": "t1", "hours": 1.08}]}, {"id": "7t3d6n2d", "date": "2026-06-22", "jobId": "JOB-7199", "revenue": 0.0, "participants": [{"techId": "t1", "hours": 1.26}]}, {"id": "qe0ac1n6", "date": "2026-06-22", "jobId": "JOB-7145", "revenue": 476.86, "participants": [{"techId": "t3", "hours": 2.39}]}, {"id": "364j11tl", "date": "2026-06-22", "jobId": "JOB-7288", "revenue": 90.5, "participants": [{"techId": "t3", "hours": 1.58}]}, {"id": "1eqsb3gt", "date": "2026-06-22", "jobId": "JOB-7118", "revenue": 602.71, "participants": [{"techId": "t3", "hours": 4.0}]}, {"id": "i90p8s3l", "date": "2026-06-22", "jobId": "JOB-7076", "revenue": 130.86, "participants": [{"techId": "t3", "hours": 1.45}]}, {"id": "y7x1doot", "date": "2026-06-23", "jobId": "JOB-7146", "revenue": 2645.0, "participants": [{"techId": "t1", "hours": 6.3}, {"techId": "t3", "hours": 5.08}]}, {"id": "edvk95g1", "date": "2026-06-24", "jobId": "JOB-7039", "revenue": 353.45, "participants": [{"techId": "t3", "hours": 6.39}, {"techId": "t1", "hours": 2.04}]}, {"id": "a4ziazen", "date": "2026-06-24", "jobId": "JOB-7228", "revenue": 155.0, "participants": [{"techId": "t3", "hours": 2.13}]}, {"id": "yt9sdffu", "date": "2026-06-24", "jobId": "JOB-7263", "revenue": 195.06, "participants": [{"techId": "t1", "hours": 2.23}]}, {"id": "6wq79jz3", "date": "2026-06-24", "jobId": "JOB-7248", "revenue": 155.0, "participants": [{"techId": "t1", "hours": 1.18}]}, {"id": "ikhajypd", "date": "2026-06-25", "jobId": "JOB-7281", "revenue": 0.0, "participants": [{"techId": "t1", "hours": 1.3}]}, {"id": "ksfh8cfw", "date": "2026-06-25", "jobId": "JOB-7216", "revenue": 207.0, "participants": [{"techId": "t1", "hours": 1.43}]}, {"id": "qvl4pctb", "date": "2026-06-25", "jobId": "JOB-7023", "revenue": 268.0, "participants": [{"techId": "t1", "hours": 1.04}]}, {"id": "rjirj8r9", "date": "2026-06-25", "jobId": "JOB-7246", "revenue": 200.0, "participants": [{"techId": "t1", "hours": 0.52}]}, {"id": "dqybb1hx", "date": "2026-06-25", "jobId": "JOB-7123", "revenue": 311.0, "participants": [{"techId": "t1", "hours": 1.25}]}, {"id": "zyvniwuh", "date": "2026-06-26", "jobId": "JOB-7151", "revenue": 313.33, "participants": [{"techId": "t1", "hours": 2.07}]}, {"id": "dmpytuuy", "date": "2026-06-26", "jobId": "JOB-7201", "revenue": 145.0, "participants": [{"techId": "t1", "hours": 0.52}]}, {"id": "rkrs3qti", "date": "2026-06-26", "jobId": "JOB-7009", "revenue": 1120.55, "participants": [{"techId": "t1", "hours": 4.31}]}, {"id": "a2jl312y", "date": "2026-06-26", "jobId": "JOB-7096", "revenue": 111.45, "participants": [{"techId": "t1", "hours": 1.11}]}, {"id": "cmd01phu", "date": "2026-06-26", "jobId": "JOB-7236", "revenue": 0.0, "participants": [{"techId": "t1", "hours": 1.15}]}, {"id": "hzxnu4ef", "date": "2026-06-26", "jobId": "JOB-7004", "revenue": 456.0, "participants": [{"techId": "t1", "hours": 2.3}]}, {"id": "e3669jo8", "date": "2026-06-27", "jobId": "JOB-7195", "revenue": 145.0, "participants": [{"techId": "t1", "hours": 1.1}]}, {"id": "x3j921l7", "date": "2026-06-27", "jobId": "JOB-7169", "revenue": 0.0, "participants": [{"techId": "t1", "hours": 1.25}]}, {"id": "ug8xts3g", "date": "2026-06-27", "jobId": "JOB-7053", "revenue": 233.15, "participants": [{"techId": "t1", "hours": 2.05}]}, {"id": "yhi50jgk", "date": "2026-06-27", "jobId": "JOB-7111", "revenue": 55.0, "participants": [{"techId": "t1", "hours": 0.4}]}, {"id": "8vks530i", "date": "2026-06-27", "jobId": "JOB-7253", "revenue": 110.0, "participants": [{"techId": "t1", "hours": 0.45}]}, {"id": "51fkhyl5", "date": "2026-06-27", "jobId": "JOB-7001", "revenue": 0.0, "participants": [{"techId": "t1", "hours": 1.08}]}, {"id": "3dsymikn", "date": "2026-06-29", "jobId": "JOB-7171", "revenue": 145.0, "participants": [{"techId": "t1", "hours": 0.58}]}, {"id": "al9pwx4r", "date": "2026-06-29", "jobId": "JOB-7087", "revenue": 450.6, "participants": [{"techId": "t1", "hours": 2.58}]}, {"id": "72tvjjia", "date": "2026-06-29", "jobId": "JOB-7013", "revenue": 1231.82, "participants": [{"techId": "t1", "hours": 3.08}]}, {"id": "pl64uce6", "date": "2026-06-29", "jobId": "JOB-7139", "revenue": 155.0, "participants": [{"techId": "t1", "hours": 1.26}]}, {"id": "b0s0kdyi", "date": "2026-06-29", "jobId": "JOB-7142", "revenue": 1476.86, "participants": [{"techId": "t3", "hours": 3.39}]}, {"id": "22u2qs9l", "date": "2026-06-29", "jobId": "JOB-7218", "revenue": 190.5, "participants": [{"techId": "t3", "hours": 1.58}]}, {"id": "y8f8y2rk", "date": "2026-06-29", "jobId": "JOB-7198", "revenue": 1602.71, "participants": [{"techId": "t3", "hours": 3.12}]}, {"id": "vi6qfjaj", "date": "2026-06-30", "jobId": "JOB-7241", "revenue": 1213.33, "participants": [{"techId": "t1", "hours": 4.07}]}, {"id": "4f49548p", "date": "2026-06-30", "jobId": "JOB-7204", "revenue": 645.0, "participants": [{"techId": "t1", "hours": 2.52}]}, {"id": "exoddfly", "date": "2026-06-30", "jobId": "JOB-7099", "revenue": 2120.55, "participants": [{"techId": "t1", "hours": 3.31}]}, {"id": "q6migfv8", "date": "2026-06-30", "jobId": "JOB-7071", "revenue": 3130.86, "participants": [{"techId": "t3", "hours": 4.45}]}, {"id": "8jlpg4ea", "date": "2026-06-30", "jobId": "JOB-7046", "revenue": 1321.96, "participants": [{"techId": "t3", "hours": 5.08}]}, {"id": "mbxw46yi", "date": "2026-07-01", "jobId": "JOB-7092", "revenue": 3599.14, "participants": [{"techId": "t3", "hours": 6.5}]}, {"id": "ieij2858", "date": "2026-07-01", "jobId": "JOB-7242", "revenue": 400.29, "participants": [{"techId": "t1", "hours": 3.3}]}, {"id": "jo6kx0rc", "date": "2026-07-01", "jobId": "JOB-7187", "revenue": 500.6, "participants": [{"techId": "t1", "hours": 4.5}]}, {"id": "ebkcl9pe", "date": "2026-07-02", "jobId": "JOB-7372", "revenue": 491.56, "participants": [{"techId": "t3", "hours": 2.22}, {"techId": "t1", "hours": 1.41}]}, {"id": "bin20o5z", "date": "2026-07-02", "jobId": "JOB-7332", "revenue": 148.78, "participants": [{"techId": "t3", "hours": 1.33}]}, {"id": "z65lidaz", "date": "2026-07-02", "jobId": "JOB-7235", "revenue": 90.5, "participants": [{"techId": "t3", "hours": 1.39}]}, {"id": "d47sjd9l", "date": "2026-07-02", "jobId": "JOB-7294", "revenue": 77.5, "participants": [{"techId": "t3", "hours": 1.0}]}, {"id": "8kulcpa8", "date": "2026-07-02", "jobId": "JOB-7343", "revenue": 232.5, "participants": [{"techId": "t1", "hours": 2.11}]}, {"id": "u5dgchnd", "date": "2026-07-02", "jobId": "JOB-7339", "revenue": 77.5, "participants": [{"techId": "t1", "hours": 0.34}]}, {"id": "etm1gd22", "date": "2026-07-02", "jobId": "JOB-7297", "revenue": 731.82, "participants": [{"techId": "t1", "hours": 1.41}]}, {"id": "asg59uwb", "date": "2026-07-02", "jobId": "JOB-7307", "revenue": 358.25, "participants": [{"techId": "t1", "hours": 1.21}]}, {"id": "cg2yj5fw", "date": "2026-07-03", "jobId": "JOB-7082", "revenue": 387.5, "participants": [{"techId": "t3", "hours": 3.43}]}, {"id": "a7tpff0y", "date": "2026-07-03", "jobId": "JOB-7315", "revenue": 1058.63, "participants": [{"techId": "t3", "hours": 2.0}]}, {"id": "dimi1gbv", "date": "2026-07-03", "jobId": "JOB-7232", "revenue": 283.56, "participants": [{"techId": "t1", "hours": 1.44}]}, {"id": "h9lzotha", "date": "2026-07-03", "jobId": "JOB-7399", "revenue": 202.92, "participants": [{"techId": "t1", "hours": 1.45}]}, {"id": "97yj84cu", "date": "2026-07-03", "jobId": "JOB-7389", "revenue": 671.86, "participants": [{"techId": "t1", "hours": 4.03}]}, {"id": "mx1bhox3", "date": "2026-07-06", "jobId": "JOB-7388", "revenue": 924.79, "participants": [{"techId": "t3", "hours": 2.24}]}, {"id": "auevn730", "date": "2026-07-06", "jobId": "JOB-7244", "revenue": 254.36, "participants": [{"techId": "t1", "hours": 1.54}]}, {"id": "hvdaaclc", "date": "2026-07-07", "jobId": "JOB-7308", "revenue": 425.01, "participants": [{"techId": "t3", "hours": 1.54}]}, {"id": "qnv1s0hl", "date": "2026-07-07", "jobId": "JOB-7116", "revenue": 391.17, "participants": [{"techId": "t3", "hours": 6.3}]}, {"id": "ay221vze", "date": "2026-07-07", "jobId": "JOB-7292", "revenue": 756.48, "participants": [{"techId": "t3", "hours": 2.01}]}, {"id": "fen8h146", "date": "2026-07-07", "jobId": "JOB-7396", "revenue": 215.75, "participants": [{"techId": "t1", "hours": 1.24}]}, {"id": "51uih15v", "date": "2026-07-07", "jobId": "JOB-7404", "revenue": 48.5, "participants": [{"techId": "t1", "hours": 1.11}]}, {"id": "dyocssr0", "date": "2026-07-07", "jobId": "JOB-7432", "revenue": 48.5, "participants": [{"techId": "t1", "hours": 1.11}]}, {"id": "qftihwvl", "date": "2026-07-07", "jobId": "JOB-7435", "revenue": 211.2, "participants": [{"techId": "t1", "hours": 0.5}]}, {"id": "qvksdllv", "date": "2026-07-07", "jobId": "JOB-7301", "revenue": 97.75, "participants": [{"techId": "t1", "hours": 1.06}]}, {"id": "wedhii63", "date": "2026-07-07", "jobId": "JOB-7397", "revenue": 220.0, "participants": [{"techId": "t1", "hours": 2.31}]}, {"id": "i8ztgpt4", "date": "2026-07-08", "jobId": "JOB-7090", "revenue": 3745.11, "participants": [{"techId": "t3", "hours": 3.08}, {"techId": "t1", "hours": 2.35}, {"techId": "t2", "hours": 3.19}]}, {"id": "mmk7hiif", "date": "2026-07-08", "jobId": "JOB-7384", "revenue": 465.0, "participants": [{"techId": "t3", "hours": 2.29}]}, {"id": "h4zdntkf", "date": "2026-07-08", "jobId": "JOB-7412", "revenue": 306.0, "participants": [{"techId": "t1", "hours": 1.32}]}, {"id": "0nok67tw", "date": "2026-07-08", "jobId": "JOB-7257", "revenue": 144.75, "participants": [{"techId": "t1", "hours": 0.49}]}, {"id": "99g32mv3", "date": "2026-07-09", "jobId": "JOB-7012", "revenue": 875.0, "participants": [{"techId": "t1", "hours": 2.47}, {"techId": "t3", "hours": 3.34}]}, {"id": "bmadynrk", "date": "2026-07-09", "jobId": "JOB-7131", "revenue": 662.2, "participants": [{"techId": "t1", "hours": 3.49}, {"techId": "t3", "hours": 4.1}]}, {"id": "jil0gmdx", "date": "2026-07-09", "jobId": "JOB-7366", "revenue": 168.0, "participants": [{"techId": "t2", "hours": 1.37}]}, {"id": "ve1gkb02", "date": "2026-07-09", "jobId": "JOB-7182", "revenue": 446.25, "participants": [{"techId": "t2", "hours": 6.07}]}, {"id": "6j9qedpm", "date": "2026-07-10", "jobId": "JOB-7453", "revenue": 1040.0, "participants": [{"techId": "t1", "hours": 3.44}]}, {"id": "vzsx3krb", "date": "2026-07-10", "jobId": "JOB-7420", "revenue": 116.25, "participants": [{"techId": "t1", "hours": 0.43}]}, {"id": "x4fdcz8m", "date": "2026-07-10", "jobId": "JOB-7223", "revenue": 920.49, "participants": [{"techId": "t2", "hours": 5.32}]}, {"id": "6cgjg34k", "date": "2026-07-10", "jobId": "JOB-7454", "revenue": 48.5, "participants": [{"techId": "t2", "hours": 0.27}]}, {"id": "5y0n89c8", "date": "2026-07-10", "jobId": "JOB-7298", "revenue": 89.25, "participants": [{"techId": "t2", "hours": 1.08}]}, {"id": "6lk51hj1", "date": "2026-07-10", "jobId": "JOB-7422", "revenue": 155.0, "participants": [{"techId": "t2", "hours": 1.11}]}, {"id": "vjs4r3w7", "date": "2026-07-13", "jobId": "JOB-7408", "revenue": 290.59, "participants": [{"techId": "t3", "hours": 1.27}]}, {"id": "sck5ix8d", "date": "2026-07-13", "jobId": "JOB-7416", "revenue": 48.5, "participants": [{"techId": "t3", "hours": 0.31}]}, {"id": "x229j22x", "date": "2026-07-13", "jobId": "JOB-7170", "revenue": 86.25, "participants": [{"techId": "t3", "hours": 0.38}]}, {"id": "43jcm4ql", "date": "2026-07-13", "jobId": "JOB-7352", "revenue": 215.65, "participants": [{"techId": "t1", "hours": 1.24}]}, {"id": "eymos6lj", "date": "2026-07-13", "jobId": "JOB-7442", "revenue": 77.5, "participants": [{"techId": "t1", "hours": 0.52}]}, {"id": "blxv2hvl", "date": "2026-07-13", "jobId": "JOB-7456", "revenue": 486.5, "participants": [{"techId": "t1", "hours": 2.39}]}, {"id": "vy63k70x", "date": "2026-07-13", "jobId": "JOB-7293", "revenue": 184.39, "participants": [{"techId": "t2", "hours": 2.19}]}, {"id": "347vv0vv", "date": "2026-07-13", "jobId": "JOB-7246", "revenue": 179.23, "participants": [{"techId": "t2", "hours": 1.41}]}, {"id": "r359obie", "date": "2026-07-13", "jobId": "JOB-7275", "revenue": 203.64, "participants": [{"techId": "t2", "hours": 1.08}]}, {"id": "gxmq8xw3", "date": "2026-07-13", "jobId": "JOB-7241", "revenue": 116.75, "participants": [{"techId": "t2", "hours": 0.53}]}, {"id": "cmkpjg4i", "date": "2026-07-13", "jobId": "JOB-7386", "revenue": 175.52, "participants": [{"techId": "t2", "hours": 1.14}]}, {"id": "evqqx3pj", "date": "2026-07-14", "jobId": "JOB-7310", "revenue": 1832.75, "participants": [{"techId": "t3", "hours": 5.01}, {"techId": "t1", "hours": 4.24}, {"techId": "t2", "hours": 4.12}]}, {"id": "oiyli07e", "date": "2026-07-14", "jobId": "JOB-7039", "revenue": 353.45, "participants": [{"techId": "t3", "hours": 10.14}, {"techId": "t1", "hours": 4.14}, {"techId": "t2", "hours": 2.54}]}, {"id": "mx7rpl6h", "date": "2026-07-15", "jobId": "JOB-7167", "revenue": 150.0, "participants": [{"techId": "t3", "hours": 1.17}]}, {"id": "w9api3yc", "date": "2026-07-15", "jobId": "JOB-7190", "revenue": 115.0, "participants": [{"techId": "t3", "hours": 0.51}]}, {"id": "hgukcnh0", "date": "2026-07-15", "jobId": "JOB-7423", "revenue": 152.0, "participants": [{"techId": "t3", "hours": 1.33}]}, {"id": "e5shnwt3", "date": "2026-07-15", "jobId": "JOB-7483", "revenue": 229.5, "participants": [{"techId": "t3", "hours": 1.17}]}, {"id": "sukegvnw", "date": "2026-07-15", "jobId": "JOB-7387", "revenue": 166.75, "participants": [{"techId": "t1", "hours": 3.5}]}, {"id": "r5tojzd1", "date": "2026-07-15", "jobId": "JOB-7353", "revenue": 112.5, "participants": [{"techId": "t1", "hours": 0.31}]}, {"id": "pkl4sqxa", "date": "2026-07-15", "jobId": "JOB-7451", "revenue": 166.62, "participants": [{"techId": "t1", "hours": 3.03}]}, {"id": "lkwnuu7d", "date": "2026-07-15", "jobId": "JOB-7460", "revenue": 147.25, "participants": [{"techId": "t1", "hours": 1.12}]}, {"id": "4cykinrp", "date": "2026-07-15", "jobId": "JOB-7262", "revenue": 86.25, "participants": [{"techId": "t1", "hours": 0.24}]}, {"id": "z73qmcrc", "date": "2026-07-15", "jobId": "JOB-7424", "revenue": 70.67, "participants": [{"techId": "t1", "hours": 0.41}]}, {"id": "75d8ame9", "date": "2026-07-15", "jobId": "JOB-7437", "revenue": 122.89, "participants": [{"techId": "t2", "hours": 1.53}]}, {"id": "hed721bs", "date": "2026-07-15", "jobId": "JOB-7477", "revenue": 183.04, "participants": [{"techId": "t2", "hours": 1.41}]}, {"id": "8dtwf4kq", "date": "2026-07-15", "jobId": "JOB-7147", "revenue": 343.32, "participants": [{"techId": "t2", "hours": 2.43}]}, {"id": "9tznfikr", "date": "2026-07-15", "jobId": "JOB-7130", "revenue": 46.07, "participants": [{"techId": "t2", "hours": 0.58}]}, {"id": "yg15gknm", "date": "2026-07-15", "jobId": "JOB-7478", "revenue": 90.5, "participants": [{"techId": "t2", "hours": 0.46}]}];
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ---------------- date helpers ---------------- */
+function addDays(dateStr, n){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+function fmtDateShort(dateStr){
+  const d = new Date(dateStr+'T00:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function fmtDateFull(dateStr){
+  const d = new Date(dateStr+'T00:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function inRange(dateStr, start, end){
+  return dateStr >= start && dateStr <= end;
+}
+
+/* ---------------- time helpers ---------------- */
+function timeToDecimal(hhmm){
+  if(!hhmm) return 0;
+  const [h,m] = hhmm.split(':').map(Number);
+  return h + (m||0)/60;
+}
+function dailyHours(entry){
+  const inT = timeToDecimal(entry.clockIn);
+  const outT = timeToDecimal(entry.clockOut);
+  let diff = outT - inT;
+  if(diff < 0) diff += 24;
+  return diff;
+}
+function dailySplit(entry){
+  const total = dailyHours(entry);
+  const reg = Math.min(CONFIG.otThreshold, total);
+  const ot = Math.max(0, total - CONFIG.otThreshold);
+  return {total, reg, ot};
+}
+
+/* ---------------- computation ---------------- */
+function techStatsForRange(techId, start, end){
+  let regHrs=0, otHrs=0;
+  TIME_ENTRIES.filter(e=>e.techId===techId && inRange(e.date,start,end)).forEach(e=>{
+    const s = dailySplit(e);
+    regHrs += s.reg; otHrs += s.ot;
+  });
+  const rate = (TECHS.find(t=>t.id===techId)||{rate:0}).rate;
+  const payroll = regHrs*rate + otHrs*rate*1.5;
+
+  let revenue=0, jobs=0;
+  JOB_ENTRIES.filter(j=>inRange(j.date,start,end) && j.participants.some(p=>p.techId===techId)).forEach(j=>{
+    const totalHrs = j.participants.reduce((s,p)=>s+Number(p.hours||0),0);
+    const p = j.participants.find(p=>p.techId===techId);
+    if(totalHrs>0){
+      revenue += j.revenue * (Number(p.hours||0)/totalHrs);
+      jobs += 1;
+    }
+  });
+
+  const laborPct = revenue>0 ? payroll/revenue : 0;
+  const tier = revenue===0 ? 'Tier 1' : (laborPct < CONFIG.tier3Max ? 'Tier 3' : laborPct < CONFIG.tier2Max ? 'Tier 2' : 'Tier 1');
+  const grossBonus = tier==='Tier 3' ? jobs*CONFIG.tier3Rate : tier==='Tier 2' ? jobs*CONFIG.tier2Rate : 0;
+  const otDeduction = otHrs*rate*CONFIG.otPenalty;
+  const netBonus = Math.max(0, grossBonus - otDeduction);
+
+  return {regHrs, otHrs, payroll, revenue, laborPct, tier, jobs, grossBonus, otDeduction, netBonus, rate};
+}
+
+function weekRanges(){
+  // Fully automatic - always follows today's real date, no manual date to update.
+  const today = new Date();
+  const day = today.getDay(); // 0=Sun..6=Sat
+  const mondayOffset = (day === 0) ? -6 : (1 - day);
+  const thisMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + mondayOffset);
+  const pad = n => String(n).padStart(2,'0');
+  const toStr = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+  const w2s = toStr(thisMonday);          // this week (Mon-Sun)
+  const w2e = addDays(w2s, 6);
+  const w1s = addDays(w2s, -7);           // last week
+  const w1e = addDays(w2s, -1);
+
+  const mStart = `${today.getFullYear()}-${pad(today.getMonth()+1)}-01`; // this calendar month
+  const mEnd = toStr(today);
+
+  return {w1s,w1e,w2s,w2e,mStart,mEnd};
+}
+
+/* ---------------- money/number formatting ---------------- */
+const fmtMoney = n => '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtHrs = n => n.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
+const fmtPct = n => (n*100).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+
+/* ---------------- render: shell ---------------- */
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="header">
+      <h1>💧 Raincheck Irrigation — P4P Scorecard</h1>
+      <div class="sub">Live tracker · updated ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+    </div>
+    <div class="shared-note">${hasClaudeStorage ? 'This data is shared — anyone using this app sees the same time log, job tracker, and settings.' : "Data is saved in this browser only. Open on the same device/browser to see your entries — they will not sync to other devices yet."}</div>
+    <div class="tabs">
+      ${tabButton('dashboard','Dashboard')}
+      ${tabButton('timelog','Time Log')}
+      ${tabButton('jobs','Job Tracker')}
+      ${tabButton('settings','Team & Settings')}
+    </div>
+    <div id="tabContent"></div>
+  `;
+  renderTab();
+}
+function tabButton(key,label){
+  return `<div class="tab ${activeTab===key?'active':''}" data-tab="${key}">${label}</div>`;
+}
+function attachTabEvents(){
+  document.querySelectorAll('.tab').forEach(el=>{
+    el.onclick = ()=>{ activeTab = el.dataset.tab; render(); };
+  });
+}
+
+function renderTab(){
+  const c = document.getElementById('tabContent');
+  if(activeTab==='dashboard') c.innerHTML = renderDashboard();
+  if(activeTab==='timelog') c.innerHTML = renderTimeLog();
+  if(activeTab==='jobs') c.innerHTML = renderJobs();
+  if(activeTab==='settings') c.innerHTML = renderSettings();
+  attachTabEvents();
+  if(activeTab==='timelog') attachTimeLogEvents();
+  if(activeTab==='jobs') attachJobEvents();
+  if(activeTab==='settings') attachSettingsEvents();
+}
+
+/* ---------------- gauge ---------------- */
+function gauge(label, pct){
+  const clamped = Math.min(1, pct);
+  return `<div class="gauge-row">
+    <div class="gauge-label">${label}</div>
+    <div class="gauge-track"><div class="gauge-marker" style="left:calc(${(clamped*100).toFixed(1)}% - 2px)"></div></div>
+    <div class="gauge-val">${fmtPct(pct)}</div>
+  </div>`;
+}
+
+/* ---------------- dashboard ---------------- */
+function weekTable(title, dateLabel, start, end){
+  const rows = TECHS.map(t=>{
+    const s = techStatsForRange(t.id, start, end);
+    return {name:t.name, ...s};
+  });
+  const totals = rows.reduce((acc,r)=>({
+    regHrs:acc.regHrs+r.regHrs, otHrs:acc.otHrs+r.otHrs, payroll:acc.payroll+r.payroll,
+    revenue:acc.revenue+r.revenue, jobs:acc.jobs+r.jobs, grossBonus:acc.grossBonus+r.grossBonus,
+    otDeduction:acc.otDeduction+r.otDeduction, netBonus:acc.netBonus+r.netBonus
+  }),{regHrs:0,otHrs:0,payroll:0,revenue:0,jobs:0,grossBonus:0,otDeduction:0,netBonus:0});
+  const companyLabor = totals.revenue>0 ? totals.payroll/totals.revenue : 0;
+
+  return `
+  <div class="card">
+    <h2>${title}</h2>
+    <div class="card-note">${dateLabel}</div>
+    ${rows.map(r=>gauge(r.name, r.laborPct)).join('')}
+    <table>
+      <thead><tr>
+        <th>Tech</th><th>Reg Hrs</th><th>OT Hrs</th><th>Payroll</th><th>Revenue</th>
+        <th>Labor %</th><th>Tier</th><th>Jobs</th><th>Gross Bonus</th><th>OT Deduct</th><th>Net Bonus</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r=>`<tr>
+          <td class="name">${r.name}</td>
+          <td>${fmtHrs(r.regHrs)}</td>
+          <td>${fmtHrs(r.otHrs)}</td>
+          <td>${fmtMoney(r.payroll)}</td>
+          <td>${fmtMoney(r.revenue)}</td>
+          <td>${fmtPct(r.laborPct)}</td>
+          <td>${tierPill(r.tier)}</td>
+          <td>${r.jobs}</td>
+          <td>${fmtMoney(r.grossBonus)}</td>
+          <td>${fmtMoney(r.otDeduction)}</td>
+          <td>${fmtMoney(r.netBonus)}</td>
+        </tr>`).join('')}
+        <tr class="total">
+          <td class="name">Company Totals</td>
+          <td>${fmtHrs(totals.regHrs)}</td>
+          <td>${fmtHrs(totals.otHrs)}</td>
+          <td>${fmtMoney(totals.payroll)}</td>
+          <td>${fmtMoney(totals.revenue)}</td>
+          <td>${fmtPct(companyLabor)}</td>
+          <td></td>
+          <td>${totals.jobs}</td>
+          <td>${fmtMoney(totals.grossBonus)}</td>
+          <td>${fmtMoney(totals.otDeduction)}</td>
+          <td>${fmtMoney(totals.netBonus)}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>`;
+}
+function tierPill(tier){
+  const cls = tier==='Tier 3'?'t3':tier==='Tier 2'?'t2':'t1';
+  return `<span class="pill ${cls}">${tier}</span>`;
+}
+
+function renderDashboard(){
+  const {w1s,w1e,w2s,w2e,mStart,mEnd} = weekRanges();
+
+  const monthRows = TECHS.map(t=>({name:t.name, ...techStatsForRange(t.id, mStart, mEnd)}));
+  const monthTotals = monthRows.reduce((acc,r)=>({
+    revenue:acc.revenue+r.revenue, payroll:acc.payroll+r.payroll, netBonus:acc.netBonus+r.netBonus
+  }),{revenue:0,payroll:0,netBonus:0});
+  const monthLabor = monthTotals.revenue>0 ? monthTotals.payroll/monthTotals.revenue : 0;
+
+  return `
+    <div class="grid-3" style="margin-bottom:18px;">
+      <div class="kpi"><div class="kpi-label">Month-to-Date Revenue</div><div class="kpi-val">${fmtMoney(monthTotals.revenue)}</div></div>
+      <div class="kpi"><div class="kpi-label">Month-to-Date Payroll</div><div class="kpi-val">${fmtMoney(monthTotals.payroll)}</div></div>
+      <div class="kpi"><div class="kpi-label">Company Labor Cost %</div><div class="kpi-val">${fmtPct(monthLabor)}</div></div>
+    </div>
+    ${weekTable('Last Week Performance Summary', `${fmtDateShort(w1s)} – ${fmtDateFull(w1e)}`, w1s, w1e)}
+    ${weekTable('This Week Performance Summary', `${fmtDateShort(w2s)} – ${fmtDateFull(w2e)} · updates automatically as you log entries`, w2s, w2e)}
+    ${weekTable('Month-to-Date Actual Performance', `${fmtDateShort(mStart)} – ${fmtDateFull(mEnd)} · live running total, no projection`, mStart, mEnd)}
+    ${weekTable('Overall Summary (All-Time)', `Every entry ever logged, any date · always up to date`, '0000-01-01', '9999-12-31')}
+    <div class="card">
+      <h2>Bonus Tiers (reference)</h2>
+      <table>
+        <thead><tr><th>Tier</th><th>Labor Cost %</th><th>Bonus / Job</th></tr></thead>
+        <tbody>
+          <tr><td>${tierPill('Tier 3')}</td><td>Under ${fmtPct(CONFIG.tier3Max)}</td><td>${fmtMoney(CONFIG.tier3Rate)}</td></tr>
+          <tr><td>${tierPill('Tier 2')}</td><td>${fmtPct(CONFIG.tier3Max)} – ${fmtPct(CONFIG.tier2Max)}</td><td>${fmtMoney(CONFIG.tier2Rate)}</td></tr>
+          <tr><td>${tierPill('Tier 1')}</td><td>${fmtPct(CONFIG.tier2Max)} and above</td><td>${fmtMoney(0)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* ---------------- time log tab ---------------- */
+function renderTimeLog(){
+  const sorted = [...TIME_ENTRIES].sort((a,b)=> b.date.localeCompare(a.date));
+  return `
+    <div class="card">
+      <h2>Add Time Entry</h2>
+      <div class="card-note">Overtime is calculated automatically — anything over ${CONFIG.otThreshold} hrs in a single day counts as OT.</div>
+      <div class="form-grid">
+        <div><label>Technician</label><select id="te-tech">${TECHS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select></div>
+        <div><label>Date</label><input type="date" id="te-date" value="${todayStr()}"></div>
+        <div><label>Clock In</label><input type="time" id="te-in" value="08:00"></div>
+        <div><label>Clock Out</label><input type="time" id="te-out" value="17:00"></div>
+        <div><button class="btn-primary" id="te-add">Add Entry</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Logged Time</h2>
+      ${sorted.length===0? '<div class="empty">No entries yet. Add the first clock-in / clock-out above.</div>' : `
+      <table>
+        <thead><tr><th>Date</th><th>Tech</th><th>Clock In</th><th>Clock Out</th><th>Total Hrs</th><th>Regular</th><th>OT</th><th></th></tr></thead>
+        <tbody>
+          ${sorted.map(e=>{
+            const s = dailySplit(e);
+            const techName = (TECHS.find(t=>t.id===e.techId)||{}).name || '—';
+            return `<tr>
+              <td>${fmtDateShort(e.date)}</td>
+              <td class="name">${techName}</td>
+              <td>${e.clockIn}</td>
+              <td>${e.clockOut}</td>
+              <td>${fmtHrs(s.total)}</td>
+              <td>${fmtHrs(s.reg)}</td>
+              <td>${fmtHrs(s.ot)}</td>
+              <td><span class="del-icon" data-id="${e.id}" data-action="del-time">✕</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>
+  `;
+}
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function attachTimeLogEvents(){
+  document.getElementById('te-add').onclick = async ()=>{
+    const techId = document.getElementById('te-tech').value;
+    const date = document.getElementById('te-date').value;
+    const clockIn = document.getElementById('te-in').value;
+    const clockOut = document.getElementById('te-out').value;
+    if(!date || !clockIn || !clockOut){ showToast('Fill in date, clock in, and clock out'); return; }
+    TIME_ENTRIES.push({id:uid(), techId, date, clockIn, clockOut});
+    await saveKey('timeEntries', TIME_ENTRIES);
+    showToast('Time entry added');
+    renderTab();
+  };
+  document.querySelectorAll('[data-action="del-time"]').forEach(el=>{
+    el.onclick = async ()=>{
+      TIME_ENTRIES = TIME_ENTRIES.filter(e=>e.id!==el.dataset.id);
+      await saveKey('timeEntries', TIME_ENTRIES);
+      renderTab();
+    };
+  });
+}
+
+/* ---------------- job tracker tab ---------------- */
+let draftParticipants = [{techId: null, hours: ''}];
+
+function renderJobs(){
+  const sorted = [...JOB_ENTRIES].sort((a,b)=> b.date.localeCompare(a.date));
+  if(!draftParticipants.length) draftParticipants = [{techId:null, hours:''}];
+  draftParticipants.forEach(p=>{ if(!p.techId) p.techId = TECHS[0] ? TECHS[0].id : null; });
+
+  return `
+    <div class="card">
+      <h2>Add Job</h2>
+      <div class="card-note">If more than one tech worked the job, add each of them below — revenue splits automatically based on hours logged.</div>
+      <div class="form-grid">
+        <div><label>Date</label><input type="date" id="job-date" value="${todayStr()}"></div>
+        <div><label>Job ID</label><input type="text" id="job-id" placeholder="JOB-1001"></div>
+        <div><label>Total Revenue ($)</label><input type="number" step="0.01" id="job-revenue" placeholder="0.00"></div>
+      </div>
+      <div class="participants">
+        <label>Technicians on this job</label>
+        ${draftParticipants.map((p,i)=>`
+          <div class="participant-row">
+            <select data-idx="${i}" class="p-tech">${TECHS.map(t=>`<option value="${t.id}" ${p.techId===t.id?'selected':''}>${t.name}</option>`).join('')}</select>
+            <input type="number" step="0.01" placeholder="Hours" class="p-hours" data-idx="${i}" value="${p.hours}">
+            ${draftParticipants.length>1 ? `<span class="del-icon" data-idx="${i}" data-action="rm-part">✕</span>` : '<span></span>'}
+          </div>
+        `).join('')}
+        <button class="btn-add-row" id="add-participant">+ Add technician</button>
+      </div>
+      <button class="btn-primary" id="job-add">Save Job</button>
+    </div>
+    <div class="card">
+      <h2>Logged Jobs</h2>
+      ${sorted.length===0? '<div class="empty">No jobs logged yet. Add the first job above.</div>' : `
+      <table>
+        <thead><tr><th>Date</th><th>Job ID</th><th>Revenue</th><th>Techs (hrs / split $)</th><th></th></tr></thead>
+        <tbody>
+          ${sorted.map(j=>{
+            const totalHrs = j.participants.reduce((s,p)=>s+Number(p.hours||0),0);
+            const parts = j.participants.map(p=>{
+              const name = (TECHS.find(t=>t.id===p.techId)||{}).name || '—';
+              const split = totalHrs>0 ? j.revenue*(Number(p.hours||0)/totalHrs) : 0;
+              return `${name} (${fmtHrs(Number(p.hours||0))}h / ${fmtMoney(split)})`;
+            }).join(', ');
+            return `<tr>
+              <td>${fmtDateShort(j.date)}</td>
+              <td class="name">${j.jobId}</td>
+              <td>${fmtMoney(j.revenue)}</td>
+              <td style="white-space:normal;">${parts}</td>
+              <td><span class="del-icon" data-id="${j.id}" data-action="del-job">✕</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>
+  `;
+}
+
+function attachJobEvents(){
+  document.getElementById('add-participant').onclick = ()=>{
+    draftParticipants.push({techId: TECHS[0]?TECHS[0].id:null, hours:''});
+    renderTab();
+  };
+  document.querySelectorAll('.p-tech').forEach(el=>{
+    el.onchange = ()=>{ draftParticipants[el.dataset.idx].techId = el.value; };
+  });
+  document.querySelectorAll('.p-hours').forEach(el=>{
+    el.oninput = ()=>{ draftParticipants[el.dataset.idx].hours = el.value; };
+  });
+  document.querySelectorAll('[data-action="rm-part"]').forEach(el=>{
+    el.onclick = ()=>{ draftParticipants.splice(Number(el.dataset.idx),1); renderTab(); };
+  });
+  document.getElementById('job-add').onclick = async ()=>{
+    const date = document.getElementById('job-date').value;
+    const jobId = document.getElementById('job-id').value.trim();
+    const revenue = Number(document.getElementById('job-revenue').value);
+    if(!date || !jobId || !revenue){ showToast('Fill in date, job ID, and revenue'); return; }
+    const participants = draftParticipants.filter(p=>p.techId && Number(p.hours)>0);
+    if(participants.length===0){ showToast('Add at least one technician with hours'); return; }
+    JOB_ENTRIES.push({id:uid(), date, jobId, revenue, participants});
+    await saveKey('jobEntries', JOB_ENTRIES);
+    draftParticipants = [{techId:TECHS[0]?TECHS[0].id:null, hours:''}];
+    showToast('Job saved');
+    renderTab();
+  };
+  document.querySelectorAll('[data-action="del-job"]').forEach(el=>{
+    el.onclick = async ()=>{
+      JOB_ENTRIES = JOB_ENTRIES.filter(j=>j.id!==el.dataset.id);
+      await saveKey('jobEntries', JOB_ENTRIES);
+      renderTab();
+    };
+  });
+}
+
+/* ---------------- settings tab ---------------- */
+function renderSettings(){
+  return `
+    <div class="card">
+      <h2>Technicians</h2>
+      <div class="card-note">Base hourly rate is used to compute payroll cost and OT deductions.</div>
+      <table>
+        <thead><tr><th>Name</th><th>Base Rate ($/hr)</th><th></th></tr></thead>
+        <tbody>
+          ${TECHS.map(t=>`<tr>
+            <td><input type="text" class="tech-name" data-id="${t.id}" value="${t.name}"></td>
+            <td><input type="number" step="0.01" class="tech-rate" data-id="${t.id}" value="${t.rate}" style="width:100px;"></td>
+            <td><span class="del-icon" data-id="${t.id}" data-action="del-tech">✕</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="save-bar">
+        <button class="btn-secondary" id="add-tech">+ Add Technician</button>
+        <button class="btn-primary" id="save-techs">Save Team</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Pay Period</h2>
+      <div class="card-note">"This Week" and "Last Week" on the Dashboard always follow today's actual date automatically — Monday through Sunday, no date to update. "Month-to-Date" covers the 1st of the current calendar month through today. Nothing to configure here anymore.</div>
+    </div>
+
+    <div class="card">
+      <h2>Bonus Tier Thresholds</h2>
+      <div class="form-grid">
+        <div><label>Tier 3 max labor cost %</label><input type="number" step="0.1" id="cfg-tier3max" value="${(CONFIG.tier3Max*100).toFixed(1)}"></div>
+        <div><label>Tier 2 max labor cost %</label><input type="number" step="0.1" id="cfg-tier2max" value="${(CONFIG.tier2Max*100).toFixed(1)}"></div>
+        <div><label>Tier 3 bonus / job ($)</label><input type="number" step="0.01" id="cfg-tier3rate" value="${CONFIG.tier3Rate}"></div>
+        <div><label>Tier 2 bonus / job ($)</label><input type="number" step="0.01" id="cfg-tier2rate" value="${CONFIG.tier2Rate}"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Overtime Rules</h2>
+      <div class="form-grid">
+        <div><label>Daily OT threshold (hrs/day)</label><input type="number" step="0.5" id="cfg-otthresh" value="${CONFIG.otThreshold}"></div>
+        <div><label>OT bonus penalty (x base rate / OT hr)</label><input type="number" step="0.1" id="cfg-otpenalty" value="${CONFIG.otPenalty}"></div>
+      </div>
+      <div class="card-note">Bonus is docked by (OT Hours × Base Rate × this multiplier) — 0.5 claws back exactly the "extra half" premium paid for overtime.</div>
+      <div class="save-bar"><button class="btn-primary" id="save-config">Save Settings</button></div>
+    </div>
+  `;
+}
+
+function attachSettingsEvents(){
+  document.getElementById('add-tech').onclick = ()=>{
+    TECHS.push({id:uid(), name:'New Technician', rate:20});
+    renderTab();
+  };
+  document.querySelectorAll('[data-action="del-tech"]').forEach(el=>{
+    el.onclick = async ()=>{
+      TECHS = TECHS.filter(t=>t.id!==el.dataset.id);
+      await saveKey('techs', TECHS);
+      showToast('Technician removed');
+      renderTab();
+    };
+  });
+  document.getElementById('save-techs').onclick = async ()=>{
+    document.querySelectorAll('.tech-name').forEach(el=>{
+      const t = TECHS.find(t=>t.id===el.dataset.id); if(t) t.name = el.value;
+    });
+    document.querySelectorAll('.tech-rate').forEach(el=>{
+      const t = TECHS.find(t=>t.id===el.dataset.id); if(t) t.rate = Number(el.value)||0;
+    });
+    await saveKey('techs', TECHS);
+    showToast('Team saved');
+    renderTab();
+  };
+  document.getElementById('save-config').onclick = async ()=>{
+    CONFIG.tier3Max = Number(document.getElementById('cfg-tier3max').value)/100;
+    CONFIG.tier2Max = Number(document.getElementById('cfg-tier2max').value)/100;
+    CONFIG.tier3Rate = Number(document.getElementById('cfg-tier3rate').value);
+    CONFIG.tier2Rate = Number(document.getElementById('cfg-tier2rate').value);
+    CONFIG.otThreshold = Number(document.getElementById('cfg-otthresh').value);
+    CONFIG.otPenalty = Number(document.getElementById('cfg-otpenalty').value);
+    await saveKey('config', CONFIG);
+    showToast('Settings saved');
+    renderTab();
+  };
+}
+
+/* ---------------- init ---------------- */
+async function init(){
+  CONFIG = await loadKey('config', DEFAULT_CONFIG);
+  TECHS = await loadKey('techs', DEFAULT_TECHS);
+  TIME_ENTRIES = await loadKey('timeEntries', DEFAULT_TIME_ENTRIES);
+  JOB_ENTRIES = await loadKey('jobEntries', DEFAULT_JOB_ENTRIES);
+  render();
+}
+init();
+
+})();
+</script>
