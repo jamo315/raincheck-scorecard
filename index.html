@@ -38,6 +38,9 @@
   .nav-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
   .nav-row select{width:auto;padding:7px 10px;}
   .nav-label{font-family:var(--display);font-weight:600;font-size:13.5px;color:var(--navy-deep);flex:1;min-width:180px;}
+  .ot-approval-box{background:var(--amber-bg);border:1px solid var(--amber);border-radius:8px;padding:12px 14px;margin-top:4px;}
+  .checkbox-row{display:flex;align-items:flex-start;gap:8px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);cursor:pointer;}
+  .checkbox-row input{width:auto;margin-top:2px;}
   .tab{font-family:var(--display);font-weight:600;font-size:13.5px;letter-spacing:.02em;text-transform:uppercase;padding:10px 16px;cursor:pointer;color:var(--ink-soft);border-bottom:2px solid transparent;transition:all .15s;user-select:none;}
   .tab:hover{color:var(--navy);}
   .tab.active{color:var(--navy-deep);border-bottom-color:var(--navy-deep);}
@@ -207,13 +210,14 @@ function dailySplit(entry){
 
 /* ---------------- computation ---------------- */
 function techStatsForRange(techId, start, end){
-  let regHrs=0, otHrs=0;
+  let regHrs=0, otHrs=0, otDeductibleHrs=0, otApprovedHrs=0;
   TIME_ENTRIES.filter(e=>e.techId===techId && inRange(e.date,start,end)).forEach(e=>{
     const s = dailySplit(e);
     regHrs += s.reg; otHrs += s.ot;
+    if(e.approved){ otApprovedHrs += s.ot; } else { otDeductibleHrs += s.ot; }
   });
   const rate = (TECHS.find(t=>t.id===techId)||{rate:0}).rate;
-  const payroll = regHrs*rate + otHrs*rate*1.5;
+  const payroll = regHrs*rate + otHrs*rate*1.5; // full OT wages paid either way - approval only affects the bonus deduction
 
   let revenue=0, jobs=0;
   JOB_ENTRIES.filter(j=>inRange(j.date,start,end) && j.participants.some(p=>p.techId===techId)).forEach(j=>{
@@ -228,10 +232,10 @@ function techStatsForRange(techId, start, end){
   const laborPct = revenue>0 ? payroll/revenue : 0;
   const tier = revenue===0 ? 'Tier 1' : (laborPct < CONFIG.tier3Max ? 'Tier 3' : laborPct < CONFIG.tier2Max ? 'Tier 2' : 'Tier 1');
   const grossBonus = tier==='Tier 3' ? jobs*CONFIG.tier3Rate : tier==='Tier 2' ? jobs*CONFIG.tier2Rate : 0;
-  const otDeduction = otHrs*rate*CONFIG.otPenalty;
+  const otDeduction = otDeductibleHrs*rate*CONFIG.otPenalty;
   const netBonus = Math.max(0, grossBonus - otDeduction);
 
-  return {regHrs, otHrs, payroll, revenue, laborPct, tier, jobs, grossBonus, otDeduction, netBonus, rate};
+  return {regHrs, otHrs, otDeductibleHrs, otApprovedHrs, payroll, revenue, laborPct, tier, jobs, grossBonus, otDeduction, netBonus, rate};
 }
 
 function weekRanges(){
@@ -357,20 +361,20 @@ function weekTable(title, dateLabel, start, end){
     return {name:t.name, ...s};
   });
   const totals = rows.reduce((acc,r)=>({
-    regHrs:acc.regHrs+r.regHrs, otHrs:acc.otHrs+r.otHrs, payroll:acc.payroll+r.payroll,
+    regHrs:acc.regHrs+r.regHrs, otHrs:acc.otHrs+r.otHrs, otApprovedHrs:acc.otApprovedHrs+r.otApprovedHrs, payroll:acc.payroll+r.payroll,
     revenue:acc.revenue+r.revenue, jobs:acc.jobs+r.jobs, grossBonus:acc.grossBonus+r.grossBonus,
     otDeduction:acc.otDeduction+r.otDeduction, netBonus:acc.netBonus+r.netBonus
-  }),{regHrs:0,otHrs:0,payroll:0,revenue:0,jobs:0,grossBonus:0,otDeduction:0,netBonus:0});
+  }),{regHrs:0,otHrs:0,otApprovedHrs:0,payroll:0,revenue:0,jobs:0,grossBonus:0,otDeduction:0,netBonus:0});
   const companyLabor = totals.revenue>0 ? totals.payroll/totals.revenue : 0;
 
   return `
   <div class="card">
     <h2>${title}</h2>
-    <div class="card-note">${dateLabel}</div>
+    <div class="card-note">${dateLabel}${totals.otApprovedHrs>0 ? ` · ${fmtHrs(totals.otApprovedHrs)} OT hrs approved (excluded from bonus deduction)` : ''}</div>
     ${rows.map(r=>gauge(r.name, r.laborPct)).join('')}
     <table>
       <thead><tr>
-        <th>Tech</th><th>Reg Hrs</th><th>OT Hrs</th><th>Payroll</th><th>Revenue</th>
+        <th>Tech</th><th>Reg Hrs</th><th>OT Hrs</th><th>OT Approved</th><th>Payroll</th><th>Revenue</th>
         <th>Labor %</th><th>Tier</th><th>Jobs</th><th>Gross Bonus</th><th>OT Deduct</th><th>Net Bonus</th>
       </tr></thead>
       <tbody>
@@ -378,6 +382,7 @@ function weekTable(title, dateLabel, start, end){
           <td class="name">${r.name}</td>
           <td>${fmtHrs(r.regHrs)}</td>
           <td>${fmtHrs(r.otHrs)}</td>
+          <td>${r.otApprovedHrs>0 ? fmtHrs(r.otApprovedHrs) : '—'}</td>
           <td>${fmtMoney(r.payroll)}</td>
           <td>${fmtMoney(r.revenue)}</td>
           <td>${fmtPct(r.laborPct)}</td>
@@ -391,6 +396,7 @@ function weekTable(title, dateLabel, start, end){
           <td class="name">Company Totals</td>
           <td>${fmtHrs(totals.regHrs)}</td>
           <td>${fmtHrs(totals.otHrs)}</td>
+          <td>${totals.otApprovedHrs>0 ? fmtHrs(totals.otApprovedHrs) : '—'}</td>
           <td>${fmtMoney(totals.payroll)}</td>
           <td>${fmtMoney(totals.revenue)}</td>
           <td>${fmtPct(companyLabor)}</td>
@@ -518,18 +524,28 @@ function renderTimeLog(){
         <div><label>Date</label><input type="date" id="te-date" value="${todayStr()}"></div>
         <div><label>Clock In</label><input type="time" id="te-in" value="08:00"></div>
         <div><label>Clock Out</label><input type="time" id="te-out" value="17:00"></div>
-        <div><button class="btn-primary" id="te-add">Add Entry</button></div>
       </div>
+      <div class="ot-approval-box">
+        <label class="checkbox-row"><input type="checkbox" id="te-approved"> This OT is justified (complex job, new zone install, emergency, etc.) — do not deduct it from the bonus</label>
+        <input type="text" id="te-reason" placeholder="Reason (e.g. New zone install - backyard expansion)" style="margin-top:8px;">
+      </div>
+      <div class="save-bar" style="margin-top:12px;"><button class="btn-primary" id="te-add">Add Entry</button></div>
     </div>
     <div class="card">
       <h2>Logged Time</h2>
       ${sorted.length===0? '<div class="empty">No entries yet. Add the first clock-in / clock-out above.</div>' : `
       <table>
-        <thead><tr><th>Date</th><th>Tech</th><th>Clock In</th><th>Clock Out</th><th>Total Hrs</th><th>Regular</th><th>OT</th><th></th></tr></thead>
+        <thead><tr><th>Date</th><th>Tech</th><th>Clock In</th><th>Clock Out</th><th>Total Hrs</th><th>Regular</th><th>OT</th><th>OT Status</th><th></th></tr></thead>
         <tbody>
           ${sorted.map(e=>{
             const s = dailySplit(e);
             const techName = (TECHS.find(t=>t.id===e.techId)||{}).name || '—';
+            let otStatus = '—';
+            if(s.ot > 0){
+              otStatus = e.approved
+                ? `<span class="pill t3" title="${e.reason?e.reason.replace(/"/g,'&quot;'):''}">✓ Approved</span>`
+                : `<span class="pill t1">Counts vs bonus</span>`;
+            }
             return `<tr>
               <td>${fmtDateShort(e.date)}</td>
               <td class="name">${techName}</td>
@@ -538,6 +554,7 @@ function renderTimeLog(){
               <td>${fmtHrs(s.total)}</td>
               <td>${fmtHrs(s.reg)}</td>
               <td>${fmtHrs(s.ot)}</td>
+              <td>${otStatus}</td>
               <td><span class="del-icon" data-id="${e.id}" data-action="del-time">✕</span></td>
             </tr>`;
           }).join('')}
@@ -554,8 +571,10 @@ function attachTimeLogEvents(){
     const date = document.getElementById('te-date').value;
     const clockIn = document.getElementById('te-in').value;
     const clockOut = document.getElementById('te-out').value;
+    const approved = document.getElementById('te-approved').checked;
+    const reason = document.getElementById('te-reason').value.trim();
     if(!date || !clockIn || !clockOut){ showToast('Fill in date, clock in, and clock out'); return; }
-    TIME_ENTRIES.push({id:uid(), techId, date, clockIn, clockOut});
+    TIME_ENTRIES.push({id:uid(), techId, date, clockIn, clockOut, approved, reason});
     await saveKey('timeEntries', TIME_ENTRIES);
     showToast('Time entry added');
     renderTab();
