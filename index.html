@@ -108,7 +108,7 @@
    window.storage only exists inside Claude.ai artifact previews.
    When this app is deployed on its own (Netlify, etc.), we fall back
    to localStorage so entries actually persist in that browser. */
-const STORAGE_PREFIX = 'p4p_scorecard_';
+const STORAGE_PREFIX = 'p4p_scorecard_v2_';
 const hasClaudeStorage = (typeof window !== 'undefined' && !!window.storage);
 
 async function loadKey(key, fallback){
@@ -727,6 +727,12 @@ function renderSettings(){
       <div class="card-note">Bonus is docked by (OT Hours × Base Rate × this multiplier) — 0.5 claws back exactly the "extra half" premium paid for overtime.</div>
       <div class="save-bar"><button class="btn-primary" id="save-config">Save Settings</button></div>
     </div>
+
+    <div class="card">
+      <h2>Data / Troubleshooting</h2>
+      <div class="card-note">If you update this app's file (e.g. re-uploading to GitHub Pages) but the numbers on screen still look outdated, your browser is likely showing older saved data instead of the new file. Use this to wipe what's saved in this browser and reload the latest built-in data.</div>
+      <div class="save-bar"><button class="btn-danger" style="border:1px solid var(--rust);" id="reset-data">Reset This Browser's Data to Latest</button></div>
+    </div>
   `;
 }
 
@@ -764,6 +770,29 @@ function attachSettingsEvents(){
     await saveKey('config', CONFIG);
     showToast('Settings saved');
     renderTab();
+  };
+  document.getElementById('reset-data').onclick = async ()=>{
+    if(!confirm('This will erase everything saved in this browser (time log, jobs, team, settings) and reload the latest built-in data. Continue?')) return;
+    if(hasClaudeStorage){
+      try{
+        await window.storage.delete('config', true);
+        await window.storage.delete('techs', true);
+        await window.storage.delete('timeEntries', true);
+        await window.storage.delete('jobEntries', true);
+      }catch(e){}
+    } else {
+      localStorage.removeItem(STORAGE_PREFIX+'config');
+      localStorage.removeItem(STORAGE_PREFIX+'techs');
+      localStorage.removeItem(STORAGE_PREFIX+'timeEntries');
+      localStorage.removeItem(STORAGE_PREFIX+'jobEntries');
+    }
+    CONFIG = DEFAULT_CONFIG;
+    TECHS = DEFAULT_TECHS;
+    TIME_ENTRIES = DEFAULT_TIME_ENTRIES;
+    JOB_ENTRIES = DEFAULT_JOB_ENTRIES;
+    showToast('Reset to latest built-in data');
+    activeTab = 'dashboard';
+    render();
   };
 }
 
